@@ -78,9 +78,8 @@ function auth(req, res, next) {
             err.status = 401;
             return next(err)
         }
-
     } else {
-        if(req.session.user === 'admin') {  // if session.user is good
+        if(res.session.user === 'admin') {  // if session.user is good
         // if (req.signedCookies.user === 'admin') {  // if name property of cookie is admin
             return next();
         } else {
@@ -91,16 +90,16 @@ function auth(req, res, next) {
         }
     }
 };
-app.use(auth);
+// app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 // tag router paths
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/campsites', campsiteRouter)
-app.use('/promotions', promotionRouter)
-app.use('/partners', partnerRouter)
+app.use('/campsites', auth, campsiteRouter )
+app.use('/promotions', auth, promotionRouter)
+app.use('/partners', auth, partnerRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
