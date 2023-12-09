@@ -3,6 +3,9 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const session = require('express-session');  // for session storage
+// call filestore return function with session as return value
+const FileStore = require('session-file-store')(session);  // to store session to file
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users')
@@ -34,12 +37,22 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('12345-67890-09876-54321'));
+// app.use(cookieParser('12345-67890-09876-54321'));
+
+// call session middleware
+app.use(session({
+    name: 'session-id',  // can be any
+    secret: '12345-67890-09876-54321',
+    saveUninitialized: false,  // clear session if no data change/aka don't save empty cookies
+    resave: false,  // save on all req. /i.e. keep session active
+    store: new FileStore()  // create new FileStore for data storage
+}));
 
 // authentication
 function auth(req, res, next) {
-    if(!req.signedCookies.user) {  // in case no cookie.user...
+    console.log(req.session)  // session adds 'session' prop to req.
 
+    if(!req.session.user) {  // in case no session.user
 
         const authHeader = req.headers.authorization;  // pull auth header
         if (!authHeader) {  // if there is not one...
@@ -55,8 +68,8 @@ function auth(req, res, next) {
         const pass = auth[1];
         // deal with validation
         if (user === 'admin' && pass === 'password') {
-            // set cookie
-            res.cookie('user', 'admin', {signed: true});
+            req.session.user = 'admin';  // set session user
+            // res.cookie('user', 'admin', {signed: true});
             return next();  // continue >
         } else {
             // error response with re-auth challenge
@@ -67,7 +80,8 @@ function auth(req, res, next) {
         }
 
     } else {
-        if (req.signedCookies.user === 'admin') {  // if name property of cookie is admin
+        if(req.session.user === 'admin') {  // if session.user is good
+        // if (req.signedCookies.user === 'admin') {  // if name property of cookie is admin
             return next();
         } else {
             // error response
