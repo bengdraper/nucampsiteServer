@@ -34,31 +34,49 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser('12345-67890-09876-54321'));
 
 // authentication
 function auth(req, res, next) {
-    // console.log('request headers: ', req.headers);
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        const err = new Error('User data not found');
-        res.setHeader('WWW-Authenticate', 'Basic');
-        err.status = 401;
-        return next(err);
-    }
-    // isolate auth headers encoding from array, decode to string, new array split at :
-    const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-    const user = auth[0];
-    const pass = auth[1];
-    if (user === 'admin' && pass === 'password') {
-        return next();  // allow next
+    if(!req.signedCookies.user) {  // in case no cookie.user...
+
+
+        const authHeader = req.headers.authorization;  // pull auth header
+        if (!authHeader) {  // if there is not one...
+            const err = new Error('User data not found');  // reject loudly
+            res.setHeader('WWW-Authenticate', 'Basic');  // request re-auth
+            err.status = 401;
+            return next(err);
+        }  // continue >
+
+        // parse auth header to to array of user and password as text string
+        const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+        const user = auth[0];
+        const pass = auth[1];
+        // deal with validation
+        if (user === 'admin' && pass === 'password') {
+            // set cookie
+            res.cookie('user', 'admin', {signed: true});
+            return next();  // continue >
+        } else {
+            // error response with re-auth challenge
+            const err = new Error('Invalid user data');
+            res.setHeader('WWW-Authenticate', 'Basic');
+            err.status = 401;
+            return next(err)
+        }
+
     } else {
-        const err = new Error('Invalid user data');
-        res.setHeader('WWW-Authenticate', 'Basic');
-        err.status = 401;
-        return next(err)
+        if (req.signedCookies.user === 'admin') {  // if name property of cookie is admin
+            return next();
+        } else {
+            // error response
+            const err = new Error('Invalid user data');
+            err.status = 401;
+            return next(err)
+        }
     }
-}
+};
 app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
