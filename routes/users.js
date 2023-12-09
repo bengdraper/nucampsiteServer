@@ -64,7 +64,7 @@ router.post('/login', (req, res, next) => {
         User.findOne({username: username})
         .then(user => {
             if (!user) {
-                const err = new Error(`User ${username} does not exist`);
+                const err = new Error(`User ${username} not authenticated`);
                 err.status = 401;
                 return next(err);
             } else if (user.password !== password) {

@@ -1,14 +1,14 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const session = require('express-session');  // for session storage
 // call filestore return function with session as return value
 const FileStore = require('session-file-store')(session);  // to store session to file
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users')
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users')
 const campsiteRouter = require('./routes/campsiteRouter')
 const promotionRouter = require('./routes/promotionRouter')
 const partnerRouter = require('./routes/partnerRouter')
@@ -48,50 +48,6 @@ app.use(session({
     store: new FileStore()  // create new FileStore for data storage
 }));
 
-// authentication
-function auth(req, res, next) {
-    console.log(req.session)  // session adds 'session' prop to req.
-
-    if(!req.session.user) {  // in case no session.user
-
-        const authHeader = req.headers.authorization;  // pull auth header
-        if (!authHeader) {  // if there is not one...
-            const err = new Error('User data not found');  // reject loudly
-            res.setHeader('WWW-Authenticate', 'Basic');  // request re-auth
-            err.status = 401;
-            return next(err);
-        }  // continue >
-
-        // parse auth header to to array of user and password as text string
-        const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-        const user = auth[0];
-        const pass = auth[1];
-        // deal with validation
-        if (user === 'admin' && pass === 'password') {
-            req.session.user = 'admin';  // set session user
-            // res.cookie('user', 'admin', {signed: true});
-            return next();  // continue >
-        } else {
-            // error response with re-auth challenge
-            const err = new Error('Invalid user data');
-            res.setHeader('WWW-Authenticate', 'Basic');
-            err.status = 401;
-            return next(err)
-        }
-    } else {
-        if(res.session.user === 'admin') {  // if session.user is good
-        // if (req.signedCookies.user === 'admin') {  // if name property of cookie is admin
-            return next();
-        } else {
-            // error response
-            const err = new Error('Invalid user data');
-            err.status = 401;
-            return next(err)
-        }
-    }
-};
-// app.use(auth);
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 // tag router paths
@@ -116,5 +72,26 @@ app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.render('error');
 });
+
+// authentication
+function auth(req, res, next) {
+    console.log(req.session)  // session adds 'session' prop to req.
+
+    if(!req.session.user) {
+        const err = new Error('You are not authenticated');
+        err.status = 401;
+        return next(err);
+
+    } else {
+        if(req.session.user === 'authenticated') {  // if session.user is good
+            return next();
+        } else {
+            // error response
+            const err = new Error('Invalid user data');
+            err.status = 401;
+            return next(err)
+        }
+    }
+};
 
 module.exports = app;
