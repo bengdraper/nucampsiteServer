@@ -6,6 +6,8 @@ const logger = require('morgan');
 const session = require('express-session');  // for session storage
 // call filestore return function with session as return value
 const FileStore = require('session-file-store')(session);  // to store session to file
+const passport = require('passport');  // for auth
+const authenticate = require('./authenticate.js');  // also for auth
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users')
@@ -48,12 +50,16 @@ app.use(session({
     store: new FileStore()  // create new FileStore for data storage
 }));
 
+//  for session base auth...
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // tag router paths
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/campsites', auth, campsiteRouter )
+app.use('/campsites', auth, campsiteRouter)
 app.use('/promotions', auth, promotionRouter)
 app.use('/partners', auth, partnerRouter)
 
@@ -75,23 +81,17 @@ app.use(function (err, req, res, next) {
 
 // authentication
 function auth(req, res, next) {
-    console.log(req.session)  // session adds 'session' prop to req.
+    console.log(req.user)  // debug
 
-    if(!req.session.user) {
+    if (!req.user) {
         const err = new Error('You are not authenticated');
         err.status = 401;
         return next(err);
 
     } else {
-        if(req.session.user === 'authenticated') {  // if session.user is good
-            return next();
-        } else {
-            // error response
-            const err = new Error('Invalid user data');
-            err.status = 401;
-            return next(err)
-        }
+        return next();
     }
-};
+}
+// };
 
 module.exports = app;

@@ -5,6 +5,7 @@ handling server client interactions @ /users
 
 const express = require('express');  // server
 const User = require('../models/user');  // for user data model
+const passport = require('passport');  // for auth
 
 const router = express.Router();  // create router from express
 
@@ -15,74 +16,31 @@ router.get('/', function (req, res, next) {
 
 /* new user registration
 first param to router is path, second is middleware function*/
-router.post('/signup', (req, res, next) => {
-    // db.collection.findOne(query, projection, options) / check for user in system
-    User.findOne({ username: req.body.username })
-        // returns a promise because its talking to mongo
-        // 
-        .then(user => {
-            if (user) {
-                const err = new Error(`User ${req.body.username} already exists`);
-                err.status = 403;
-                return next(err);  // pass error to express and skip following middleware
+router.post('/signup', (req, res) => {
+    User.register(
+        new User({username: req.body.username}),
+        req.body.password,
+        err => {
+            if (err) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.json({err: err});
             } else {
-                // create a new user record
-                User.create({
-                    username: req.body.username,
-                    password: req.body.password
+                passport.authenticate('local')(req, res, () => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json({success: true, status: 'Registration Successful'});
                 })
-                    // .create return should be new user doc
-                    // now for user do
-                    .then(user => {
-                        // send response:
-                        res.statusCode = 200;  // success
-                        res.setHeader('Content-Type', 'application/json')
-                        res.json({ status: 'Registration Successful', user: user })
-                    })
-                    .catch(err => next(err));
             }
-        })
-        .catch(err => next(err));
+        }
+    )
 });
 
 // post to /users/login
-router.post('/login', (req, res, next) => {
-    // check for login via session cookie user
-    if (!req.session.user) {
-        const authHeader = req.headers.authorization;  // pull auth header
-        if (!authHeader) {  // if there is not one...
-            const err = new Error('User data not found');  // reject loudly
-            res.setHeader('WWW-Authenticate', 'Basic');  // request re-auth
-            err.status = 401;
-            return next(err);
-        }  // continue >
-        // parse auth header to to array of user and password as text string
-        const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-        const username = auth[0];
-        const password = auth[1];
-
-        User.findOne({username: username})
-        .then(user => {
-            if (!user) {
-                const err = new Error(`User ${username} not authenticated`);
-                err.status = 401;
-                return next(err);
-            } else if (user.password !== password) {
-                const err = new Error('Your password is incorrect');
-                err.status = 401;
-            } else if ( user.username === username && user.password === password ) {
-                req.session.user = 'authenticated'
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'text/plain');
-                res.end('You are authenticated');
-            }
-        })
-        .catch(err => next(err));
-    } else {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'text/plain');
-        res.end('You are already authenticated');
-    }
+router.post('/login', passport.authenticate('local'), (req, res) => {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.json({success: true, status: 'Your are successfully logged in'});
 });
 
 router.get('/logout', (req, res, next) => {
