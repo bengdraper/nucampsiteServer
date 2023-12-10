@@ -1,11 +1,10 @@
 /*
 handling server client interactions @ /users
 */
-
-
 const express = require('express');  // server
 const User = require('../models/user');  // for user data model
 const passport = require('passport');  // for auth
+const authenticate = require('../authenticate');
 
 const router = express.Router();  // create router from express
 
@@ -38,9 +37,10 @@ router.post('/signup', (req, res) => {
 
 // post to /users/login
 router.post('/login', passport.authenticate('local'), (req, res) => {
+    const token = authenticate.getToken({_id: req.user._id});
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.json({success: true, status: 'Your are successfully logged in'});
+    res.json({success: true, token: token, status: 'Your are successfully logged in'});
 });
 
 router.get('/logout', (req, res, next) => {
