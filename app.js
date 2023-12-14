@@ -19,7 +19,6 @@ const connect = mongoose.connect(url, {
     useFindAndModify: false,
     useNewUrlParser: true,
     useUnifiedTopology: true
-    // family: 4
 });
 
 connect.then(() => console.log('Connected to server'),
@@ -39,11 +38,10 @@ app.use(express.urlencoded({ extended: false }));
 //  for session base auth...
 app.use(passport.initialize());
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
 app.use('/campsites', campsiteRouter)
 app.use('/promotions', promotionRouter)
 app.use('/partners', partnerRouter)

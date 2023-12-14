@@ -45,3 +45,12 @@ exports.jwtPassport = passport.use(
 );
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+
+exports.verifyAdmin = (req, res, next) => {
+    if (req.user.admin) {
+        return next()
+    }
+    err = new Error('hello') 
+    err.status = 405;
+    return next(err)
+}
