@@ -2,11 +2,12 @@ const express = require('express');  // server
 const User = require('../models/user');  // for user data model
 const passport = require('passport');  // for auth
 const authenticate = require('../authenticate');
+const cors = require('./cors');
 
 const router = express.Router();
 
 /* get  users listing. */
-router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+router.get('/',cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
     User.find()
     .then(user => {
         res.statusCode = 200;
@@ -18,7 +19,7 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req,
 
 /* new user registration
 first param to router is path, second is middleware function*/
-router.post('/signup', (req, res) => {
+router.post('/signup', cors.corsWithOptions, (req, res) => {
     User.register(
         new User({username: req.body.username}),
         req.body.password,
@@ -53,7 +54,7 @@ router.post('/signup', (req, res) => {
 });
 
 // post to /users/login
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post('/login',cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
     const token = authenticate.getToken({_id: req.user._id});
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
@@ -61,7 +62,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
     return next()
 });
 
-router.get('/logout', (req, res, next) => {
+router.get('/logout', cors.corsWithOptions, (req, res, next) => {
     if (req.session) {
         req.session.destroy();
         res.clearCookie('session-id');  // session-id is arb name choice
@@ -73,7 +74,7 @@ router.get('/logout', (req, res, next) => {
     }
 })
 
-router.get('/whotfami', authenticate.verifyUser, (req, res, next) => {
+router.get('/whoami', cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     res.send(req.user);
     console.log(req.user);
 })
