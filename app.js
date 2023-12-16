@@ -6,10 +6,11 @@ const passport = require('passport');  // for auth
 const config = require('./config');  // for auth
 
 const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users')
-const campsiteRouter = require('./routes/campsiteRouter')
-const promotionRouter = require('./routes/promotionRouter')
-const partnerRouter = require('./routes/partnerRouter')
+const usersRouter = require('./routes/users');
+const campsiteRouter = require('./routes/campsiteRouter');
+const promotionRouter = require('./routes/promotionRouter');
+const partnerRouter = require('./routes/partnerRouter');
+const uploadRouter = require('./routes/uploadRouter.js');
 
 const mongoose = require('mongoose');
 const url = config.mongoUrl;
@@ -51,9 +52,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/campsites', campsiteRouter)
-app.use('/promotions', promotionRouter)
-app.use('/partners', partnerRouter)
+app.use('/campsites', campsiteRouter);
+app.use('/promotions', promotionRouter);
+app.use('/partners', partnerRouter);
+app.use('/imageUpload', uploadRouter);  // endpoint just for image file uploads
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
