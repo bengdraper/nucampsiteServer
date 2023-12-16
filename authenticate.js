@@ -50,7 +50,7 @@ exports.verifyAdmin = (req, res, next) => {
     if (req.user.admin) {
         return next()
     }
-    err = new Error('hello') 
+    const err = new Error('You do not have administrative permission') 
     err.status = 405;
     return next(err)
 }
