@@ -19,7 +19,8 @@ const userSchema = new mongoose.Schema({
     admin: {
         type: Boolean,
         default: false
-    }
+    },
+    facebookId: String
 });
 
 // activate passport - adds a selection of passport methods to model
